@@ -9,9 +9,11 @@ class App extends Component {
     manager : 'unset',
     contractName : 'unset',
     value : '',
+    value2 : '', // Ungly. Used for double field forms
     accountBalance : '',
     currAccount : '',
-    message : ''
+    message : '',
+    tokenPrice : ''
   };
 
   async componentDidMount(){
@@ -20,13 +22,14 @@ class App extends Component {
     var currAccount = await web3.eth.getAccounts();
     currAccount = currAccount[0];
     var accountBalance = await NCN.methods.balanceOf(currAccount).call();
+    var tokenPrice = await NCN.methods.tokenPrice().call();
 
     // console.log('current account : '+currAccount);
     // console.log(manager);
-    this.setState({ manager , contractName , currAccount, accountBalance});
+    this.setState({ manager , contractName , currAccount, accountBalance, tokenPrice});
   }
 
-  onSubmit = async event => {
+  buy = async event => {
     event.preventDefault();
 
     // const accounts = await web3.eth.getAccounts();
@@ -49,6 +52,66 @@ class App extends Component {
     });
 
   }
+
+  trasferOwnership = async event => {
+    event.preventDefault();
+
+    var newOwner = this.state.value;
+
+    this.setState({message : 'Transfering to '+ newOwner +' ...'});
+
+    console.log(newOwner);
+
+    await NCN.methods.transferContrac(newOwner).send({
+      from : this.state.currAccount
+    });
+
+    this.setState({message : 'Transfer completed'});
+  }
+
+  changePrice = async event => {
+    event.preventDefault();
+
+    var newPrice = this.state.value;
+
+    this.setState({message : 'Changing price to '+ newPrice +' ...'});
+
+    await NCN.methods.setTokenPrice(newPrice).send({
+      from : this.state.currAccount
+    });
+
+    this.setState({message : 'Transfer completed'});
+  }
+
+  transfer = async event => {
+    event.preventDefault();
+
+    var amount = this.state.value2;
+    var to = this.state.value;
+
+    this.setState({message : 'Trasfering ' +amount+ ' to '+ to +' ...'});
+
+    await NCN.methods.transfer(to,amount).send({
+      from : this.state.currAccount
+    });
+
+    this.setState({message : 'Transfer completed'});
+  }
+
+  chashOut = async event => {
+    event.preventDefault();
+
+    var amount = this.state.value;
+
+    this.setState({message : 'Withdrawing '+ amount +' ...'});
+
+    await NCN.methods.cashOut(amount).send({
+      from : this.state.currAccount
+    });
+
+    this.setState({message : 'Transfer completed'});
+  }
+
   render() {
     // web3.eth.getAccounts().then(console.log);
     return (
@@ -59,20 +122,83 @@ class App extends Component {
         <h2> Token name </h2>
         <p>Token name is {this.state.contractName} </p>
 
+        <h2> Token price </h2>
+        <p>Token costs {this.state.tokenPrice} wei</p>
+
         <h2> Account balance ({this.state.currAccount})</h2>
         <p>Account balance is {this.state.accountBalance} </p>
 
         <hr/>
 
-        <form onSubmit = {this.onSubmit}>
-          <label>Buy NCN</label>
+        <form onSubmit = {this.trasferOwnership}>
+          <h2> Transfer owenership (manager only) </h2>
 
-          <input
-            value = {this.state.value}
+          &nbsp;<input
+            // value = {this.state.value}
+            onChange = {event => this.setState({ value : event.target.value})}
+          />
+
+          <button>Trasfer</button>
+        </form>
+
+        <br/>
+        <hr/>
+        <br/>
+
+        <form onSubmit = {this.changePrice}>
+          <h2> Change token price (manager only) </h2>
+
+          &nbsp; <input
+            // value = {this.state.value}
+            onChange = {event => this.setState({ value : event.target.value})}
+          />
+          <button>Submit</button>
+        </form>
+
+        <br/>
+        <hr/>
+        <br/>
+
+        <form onSubmit = {this.chashOut}>
+          <h2> Withdraw funds (manager only) </h2>
+          Amount in wei to ithdraw
+          &nbsp;<input
+            // value = {this.state.value}
+            onChange = {event => this.setState({ value : event.target.value})}
+          />
+          <button>Submit</button>
+        </form>
+
+        <br/>
+        <hr/>
+        <br/>
+
+        <form onSubmit = {this.transfer}>
+          <h2> Transfer NCN </h2>
+
+          &nbsp; Address &nbsp;<input
+            // value = {this.state.value}
+            onChange = {event => this.setState({ value : event.target.value})}
+          />
+          <br/>
+          &nbsp; Amount &nbsp;<input
+            // value = {this.state.value}
+            onChange = {event => this.setState({ value2 : event.target.value})}
+          />
+          <button>Submit</button>
+        </form>
+
+        <br/>
+        <hr/>
+        <br/>
+
+        <form onSubmit = {this.buy}>
+          <h2>Buy NCN</h2>
+          Amount of wei you want to pay
+          &nbsp; <input
+            // value = {this.state.value}
             onChange={event => this.setState({ value : event.target.value})}
           />
-          wei
-          <br/>
           <button>Buy</button>
         </form>
 
